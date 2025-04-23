@@ -10,62 +10,54 @@ import {
   TableContainer, 
   TableHead, 
   TableRow,
-  TablePagination,
-  Typography
+  Typography,
+  Grid,
+  Card,
+  CardContent
 } from '@mui/material';
+import { useQuery } from '@apollo/client';
+import { GET_TENANT_USAGE } from '../../utils/queries';
 
-// Create dummy data interface
-interface DummyData {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  lastActive: string;
-}
+// Import icons
+import StorageIcon from '@mui/icons-material/Storage';
+import PersonIcon from '@mui/icons-material/Person';
+import RouterIcon from '@mui/icons-material/Router';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import BusinessIcon from '@mui/icons-material/Business';
 
-// Generate dummy data
-const createData = (
-  id: number,
-  name: string,
-  email: string,
-  role: string,
-  status: string,
-  lastActive: string
-): DummyData => {
-  return { id, name, email, role, status, lastActive };
-};
+// Import chart components
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const rows = [
-  createData(1, 'John Doe', 'john.doe@example.com', 'Admin', 'Active', '2025-04-24'),
-  createData(2, 'Jane Smith', 'jane.smith@example.com', 'User', 'Active', '2025-04-23'),
-  createData(3, 'Robert Johnson', 'robert.j@example.com', 'Editor', 'Inactive', '2025-04-20'),
-  createData(4, 'Emily Davis', 'emily.d@example.com', 'User', 'Active', '2025-04-22'),
-  createData(5, 'Michael Brown', 'michael.b@example.com', 'Viewer', 'Active', '2025-04-21'),
-  createData(6, 'Sarah Wilson', 'sarah.w@example.com', 'User', 'Pending', '2025-04-19'),
-  createData(7, 'David Miller', 'david.m@example.com', 'Admin', 'Active', '2025-04-24'),
-  createData(8, 'Jennifer Lee', 'jennifer.l@example.com', 'Editor', 'Active', '2025-04-23'),
-  createData(9, 'Thomas Wilson', 'thomas.w@example.com', 'User', 'Inactive', '2025-04-18'),
-  createData(10, 'Lisa Taylor', 'lisa.t@example.com', 'Viewer', 'Active', '2025-04-22'),
-  createData(11, 'James Anderson', 'james.a@example.com', 'User', 'Active', '2025-04-21'),
-  createData(12, 'Patricia Clark', 'patricia.c@example.com', 'Editor', 'Pending', '2025-04-19'),
+// Create dummy chart data
+const chartData = [
+  { name: 'Jan', usage: 4000 },
+  { name: 'Feb', usage: 3000 },
+  { name: 'Mar', usage: 2000 },
+  { name: 'Apr', usage: 2780 },
+  { name: 'May', usage: 1890 },
+  { name: 'Jun', usage: 2390 },
+  { name: 'Jul', usage: 3490 },
 ];
 
-export default function DashboardPage() {
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+// Interface for tenant usage data
+interface TenantUsageData {
+  id: string;
+  tenant_id: string;
+  data_used: number;
+}
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
+export default function DashboardPage() {  
+  // Fetch tenant usage data
+  const { data: tenantData, loading: tenantLoading, error: tenantError } = useQuery(GET_TENANT_USAGE);
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  // Avoid a layout jump when reaching the last page with empty rows
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+  // Create cards data
+  const metricsCards = [
+    { title: 'Total Data Exchanged', value: '2.4 TB', icon: <StorageIcon sx={{ fontSize: 40 }} /> },
+    { title: 'Hotspot Users', value: '152', icon: <PersonIcon sx={{ fontSize: 40 }} /> },
+    { title: 'Online Routers', value: '35', icon: <RouterIcon sx={{ fontSize: 40 }} /> },
+    { title: 'Fleets', value: '12', icon: <DirectionsCarIcon sx={{ fontSize: 40 }} /> },
+    { title: 'Tenants', value: '8', icon: <BusinessIcon sx={{ fontSize: 40 }} /> },
+  ];
 
   return (
     <Box>
@@ -73,49 +65,111 @@ export default function DashboardPage() {
         Dashboard
       </Typography>
 
-      <Paper sx={{ width: '100%', mb: 2, overflow: 'hidden' }}>
-        <TableContainer sx={{ maxHeight: 440 }}>
-          <Table stickyHeader aria-label="data table">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Last Active</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => (
-                  <TableRow key={row.id} hover>
-                    <TableCell>{row.id}</TableCell>
-                    <TableCell>{row.name}</TableCell>
-                    <TableCell>{row.email}</TableCell>
-                    <TableCell>{row.role}</TableCell>
-                    <TableCell>{row.status}</TableCell>
-                    <TableCell>{row.lastActive}</TableCell>
-                  </TableRow>
-                ))}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={6} />
-                </TableRow>
+      {/* Metrics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {metricsCards.map((card, index) => (
+          <Grid item xs={12} sm={6} md={2.4} key={index}>
+            <Card sx={{ 
+              bgcolor: 'primary.main', 
+              color: 'white',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="h6" component="div">
+                      {card.value}
+                    </Typography>
+                    <Typography variant="body2">
+                      {card.title}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    {card.icon}
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Data Usage Box */}
+      <Paper sx={{ 
+        width: '100%', 
+        mb: 4, 
+        bgcolor: '#12274457',
+        p: 3
+      }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
+          Data Usage Analytics
+        </Typography>
+        <Grid container spacing={3}>
+          {/* Graph */}
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ p: 2, height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="usage" stroke="#8884d8" activeDot={{ r: 8 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+
+          {/* Tenant Usage Table */}
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ p: 2, height: 300, overflow: 'auto' }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Tenant Usage
+              </Typography>
+              {tenantLoading ? (
+                <Typography>Loading tenant data...</Typography>
+              ) : tenantError ? (
+                <Typography color="error">
+                  Error loading tenant data: {tenantError.message}
+                </Typography>
+              ) : (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Tenant ID</TableCell>
+                      <TableCell>Data Used (GB)</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {tenantData?.data_usage?.map((tenant: TenantUsageData) => (
+                      <TableRow key={tenant.id}>
+                        <TableCell>{tenant.tenant_id}</TableCell>
+                        <TableCell>{(tenant.data_used / 1024).toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                    {!tenantData?.data_usage?.length && (
+                      <TableRow>
+                        <TableCell colSpan={2} align="center">No tenant data available</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+            </Paper>
+          </Grid>
+        </Grid>
       </Paper>
     </Box>
   );
