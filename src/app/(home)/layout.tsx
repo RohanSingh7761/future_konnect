@@ -4,7 +4,7 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Sidebar from '../components/Sidebar';
-import ThemeRegistry from '../components/ThemeRegistry';
+import ApolloWrapper from '../components/ApolloWrapper';
 
 export default function HomeLayout({
   children,
@@ -12,7 +12,7 @@ export default function HomeLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeRegistry>
+    <ApolloWrapper>
       <Box sx={{ display: 'flex' }}>
         <Sidebar />
         <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
@@ -31,6 +31,6 @@ export default function HomeLayout({
           {children}
         </Box>
       </Box>
-    </ThemeRegistry>
+    </ApolloWrapper>
   );
 }
