@@ -21,3 +21,12 @@ export const GET_TENANT_USAGE = gql`
         }
     }
 `
+
+export const GET_DAILY_DATA_USAGE = gql`
+    query GetDailyDataUsage {
+        daily_data_usage(order_by: { recorded_on: asc }) {
+            recorded_on
+            total_data_used
+        }
+    }
+`

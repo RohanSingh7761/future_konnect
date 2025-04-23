@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import * as React from 'react';
 import { 
@@ -16,7 +16,7 @@ import {
   CardContent
 } from '@mui/material';
 import { useQuery } from '@apollo/client';
-import { GET_TENANT_USAGE } from '../../utils/queries';
+import { GET_TENANT_USAGE, GET_DAILY_DATA_USAGE } from '../../utils/queries';
 
 // Import icons
 import StorageIcon from '@mui/icons-material/Storage';
@@ -28,17 +28,6 @@ import BusinessIcon from '@mui/icons-material/Business';
 // Import chart components
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// Create dummy chart data
-const chartData = [
-  { name: 'Jan', usage: 4000 },
-  { name: 'Feb', usage: 3000 },
-  { name: 'Mar', usage: 2000 },
-  { name: 'Apr', usage: 2780 },
-  { name: 'May', usage: 1890 },
-  { name: 'Jun', usage: 2390 },
-  { name: 'Jul', usage: 3490 },
-];
-
 // Interface for tenant usage data
 interface TenantUsageData {
   id: string;
@@ -46,9 +35,47 @@ interface TenantUsageData {
   data_used: number;
 }
 
+// Interface for daily data usage
+interface DailyDataUsage {
+  recorded_on: string;
+  total_data_used: number;
+}
+
 export default function DashboardPage() {  
   // Fetch tenant usage data
   const { data: tenantData, loading: tenantLoading, error: tenantError } = useQuery(GET_TENANT_USAGE);
+  
+  // Fetch daily data usage for the chart
+  const { data: dailyUsageData, loading: dailyUsageLoading, error: dailyUsageError } = useQuery(GET_DAILY_DATA_USAGE);
+
+  // Format chart data from the query results
+  const formatChartData = React.useMemo(() => {
+    if (!dailyUsageData?.daily_data_usage) {
+      // Return dummy data if API data is not available
+      return [
+        { date: 'Apr 18', usage: 120 },
+        { date: 'Apr 19', usage: 145 },
+        { date: 'Apr 20', usage: 160 },
+        { date: 'Apr 21', usage: 178 },
+        { date: 'Apr 22', usage: 190 },
+        { date: 'Apr 23', usage: 210 },
+        { date: 'Apr 24', usage: 225 },
+      ];
+    }
+    
+    return dailyUsageData.daily_data_usage.map((item: DailyDataUsage) => {
+      // Ensure the data is properly formatted for the chart
+      return {
+        date: new Date(item.recorded_on).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        }),
+        usage: typeof item.total_data_used === 'number' 
+          ? Math.round(item.total_data_used / (1024 * 1024)) 
+          : 0 // Fallback if data is not a number
+      };
+    });
+  }, [dailyUsageData]);
 
   // Create cards data
   const metricsCards = [
@@ -58,6 +85,9 @@ export default function DashboardPage() {
     { title: 'Fleets', value: '12', icon: <DirectionsCarIcon sx={{ fontSize: 40 }} /> },
     { title: 'Tenants', value: '8', icon: <BusinessIcon sx={{ fontSize: 40 }} /> },
   ];
+
+  // Ensure we actually have data to display
+  console.log('Chart data:', formatChartData);
 
   return (
     <Box>
@@ -110,25 +140,72 @@ export default function DashboardPage() {
         <Grid container spacing={3}>
           {/* Graph */}
           <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 2, height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={chartData}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="usage" stroke="#8884d8" activeDot={{ r: 8 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            <Paper sx={{ 
+              p: 2, 
+              height: 300, 
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              bgcolor: 'white'
+            }}>
+              {dailyUsageLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                  <Typography>Loading chart data...</Typography>
+                </Box>
+              ) : dailyUsageError ? (
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                  <Typography color="error">
+                    Error loading chart data: {dailyUsageError.message}
+                  </Typography>
+                </Box>
+              ) : formatChartData.length === 0 ? (
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                  <Typography>No data available for chart</Typography>
+                </Box>
+              ) : (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart
+                    data={formatChartData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 20,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fill: '#333' }}
+                      tickLine={{ stroke: '#333' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#333' }}
+                      tickLine={{ stroke: '#333' }}
+                      label={{ 
+                        value: 'Data Usage (GB)', 
+                        angle: -90, 
+                        position: 'insideLeft',
+                        style: { fill: '#333' }
+                      }} 
+                    />
+                    <Tooltip 
+                      formatter={(value) => [`${value} GB`, 'Data Usage']}
+                      contentStyle={{ backgroundColor: '#fff', borderRadius: '4px' }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '10px' }}/>
+                    <Line 
+                      type="monotone" 
+                      dataKey="usage" 
+                      name="Daily Data Usage" 
+                      stroke="#2196f3" 
+                      strokeWidth={2}
+                      activeDot={{ r: 6, fill: '#2196f3', stroke: '#fff', strokeWidth: 2 }} 
+                      dot={{ r: 4, fill: '#2196f3', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </Paper>
           </Grid>
 
