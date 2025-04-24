@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography,
@@ -16,12 +16,11 @@ import {
   FormControl,
   Select,
   MenuItem,
-  InputLabel,
   TextField,
   InputAdornment
 } from '@mui/material';
 import { useQuery } from '@apollo/client';
-import { AUDIT_TRAIL } from '../../utils/queries';
+import { AUDIT_TRAIL } from '../../../utils/queries';
 import DownloadIcon from '@mui/icons-material/Download';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -51,46 +50,6 @@ export default function AuditTrailPage() {
   const [rowsPerPage] = useState<number>(10);
   
   const { data, loading, error } = useQuery(AUDIT_TRAIL);
-  const [filteredData, setFilteredData] = useState<AuditTrailData[]>([]);
-  
-  // Apply filters whenever filter criteria or data changes
-  useEffect(() => {
-    if (!data?.audit_trail) return;
-    
-    let filtered = [...data.audit_trail];
-    
-    // Apply category filter
-    if (selectedCategory) {
-      filtered = filtered.filter(item => item.category === selectedCategory);
-    }
-    
-    // Apply action filter
-    if (selectedAction) {
-      filtered = filtered.filter(item => item.event_type === selectedAction);
-    }
-    
-    // Apply user search
-    if (searchTerm) {
-      filtered = filtered.filter(item => 
-        item.performed_by.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Apply date range filter
-    if (startDate) {
-      const startDateTime = new Date(startDate).getTime();
-      filtered = filtered.filter(item => new Date(item.timestamp).getTime() >= startDateTime);
-    }
-    
-    if (endDate) {
-      const endDateTime = new Date(endDate + "T23:59:59").getTime();
-      filtered = filtered.filter(item => new Date(item.timestamp).getTime() <= endDateTime);
-    }
-    
-    setFilteredData(filtered);
-    // Reset to first page when filters change
-    setCurrentPage(1);
-  }, [data, selectedCategory, selectedAction, searchTerm, startDate, endDate]);
   
   const handleRowToggle = (index: number) => {
     setOpenRows(prev => ({
@@ -102,17 +61,19 @@ export default function AuditTrailPage() {
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
   };
-  
-  const handleActionChange = (action: string) => {
-    setSelectedAction(prevAction => prevAction === action ? "" : action);
-  };
-  
+    
   const handleDownloadLog = () => {
+    const auditTrailData = data?.audit_trail || [];
+    // Filter by category only
+    const filteredData = selectedCategory 
+      ? auditTrailData.filter((item: AuditTrailData) => item.category === selectedCategory)
+      : auditTrailData;
+      
     // Create CSV content
     const headers = ["Time", "Description", "Event", "Category", "Performed By"];
     const csvContent = [
       headers.join(","),
-      ...filteredData.map(row => [
+      ...filteredData.map((row: AuditTrailData) => [
         formatTimestamp(row.timestamp),
         `"${row.description.replace(/"/g, '""')}"`, // Escape quotes in CSV
         row.event_type,
@@ -151,20 +112,29 @@ export default function AuditTrailPage() {
   
   // Handle pagination
   const handlePageChange = (newPage: number) => {
-    if (newPage > 0 && newPage <= Math.ceil(filteredData.length / rowsPerPage)) {
+    if (newPage > 0 && newPage <= Math.ceil(getPaginatedData().length / rowsPerPage)) {
       setCurrentPage(newPage);
     }
   };
   
+  // Get data, now only filtered by category
+  const getFilteredData = () => {
+    const auditTrailData = data?.audit_trail || [];
+    return selectedCategory 
+      ? auditTrailData.filter(item => item.category === selectedCategory)
+      : auditTrailData;
+  };
+  
   // Get paginated data
   const getPaginatedData = () => {
+    const filteredData = getFilteredData();
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return filteredData.slice(startIndex, endIndex);
   };
   
   // Calculate total pages
-  const totalPages = Math.ceil((filteredData?.length || 0) / rowsPerPage);
+  const totalPages = Math.ceil((getFilteredData()?.length || 0) / rowsPerPage);
   
   if (loading) {
     return (
@@ -250,22 +220,36 @@ export default function AuditTrailPage() {
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle1" sx={{ mb: 1 }}>Action</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box 
+                onClick={() => setSelectedAction("")}
+                sx={{
+                  px: 1.5, 
+                  py: 1,
+                  borderRadius: 1,
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  bgcolor: selectedAction === "" ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
+                }}
+              >
+                All Actions
+              </Box>
               {actionTypes.map(actionType => (
-                <FormControl key={actionType} fullWidth size="small">
-                  <InputLabel sx={{ color: 'white' }} id={`action-${actionType.toLowerCase()}-label`}>{actionType}</InputLabel>
-                  <Select
-                    labelId={`action-${actionType.toLowerCase()}-label`}
-                    value={selectedAction === actionType ? actionType : ""}
-                    onChange={() => handleActionChange(actionType)}
-                    sx={{ 
-                      color: 'white',
-                      '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' },
-                      '.MuiSvgIcon-root': { color: 'white' }
-                    }}
-                  >
-                    <MenuItem value={actionType}>{actionType}</MenuItem>
-                  </Select>
-                </FormControl>
+                <Box 
+                  key={actionType}
+                  onClick={() => setSelectedAction(actionType)}
+                  sx={{
+                    px: 1.5, 
+                    py: 1,
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    bgcolor: selectedAction === actionType ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
+                  }}
+                >
+                  {actionType}
+                </Box>
               ))}
             </Box>
           </Box>
@@ -413,7 +397,7 @@ export default function AuditTrailPage() {
           </TableContainer>
           
           {/* Pagination */}
-          {filteredData.length > 0 && (
+          {getFilteredData().length > 0 && (
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'flex-end', 

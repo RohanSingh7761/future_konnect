@@ -19,7 +19,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useQuery } from '@apollo/client';
-import { GET_TENANT_USAGE, GET_DAILY_DATA_USAGE } from '../../utils/queries';
+import { GET_TENANT_USAGE, GET_DAILY_DATA_USAGE } from '../../../utils/queries';
 
 // Import icons
 import SearchIcon from '@mui/icons-material/Search';

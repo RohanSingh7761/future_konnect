@@ -30,3 +30,27 @@ export const GET_DAILY_DATA_USAGE = gql`
         }
     }
 `
+
+export const LOGIN_USER = gql `
+query Login($_eq: String = "acme@corp.com") {
+  users(where: {email: {_eq: $_eq}}) {
+    id
+    name
+    email
+    passwd
+  }
+}
+`
+
+export const SIGUNP_USER = gql `
+mutation MyMutation($email: String!, $id: Int!, $name: String!, $passwd: String!) {
+  insert_users(objects: {email: $email, name: $name, passwd: $passwd, id: $id}) {
+    returning {
+      email
+      name
+      passwd
+      id
+    }
+  }
+}
+`
