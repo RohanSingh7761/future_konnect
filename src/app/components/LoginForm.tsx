@@ -127,13 +127,23 @@ export default function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             margin="normal"
-            variant="filled"
+            variant="outlined"
             required
-            InputProps={{
-              style: { backgroundColor: '#1c1c24', color: '#fff' },
-            }}
-            InputLabelProps={{
-              style: { color: '#aaa' },
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                backgroundColor: '#1c1c24',
+                color: '#fff',
+              },
+              '& .MuiInputLabel-root': {
+                color: '#aaa',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#444',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#0ab4ff',
+              },
             }}
           />
 
@@ -144,10 +154,25 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             margin="normal"
-            variant="filled"
+            variant="outlined"
             required
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                backgroundColor: '#1c1c24',
+                color: '#fff',
+              },
+              '& .MuiInputLabel-root': {
+                color: '#aaa',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#444',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#0ab4ff',
+              },
+            }}
             InputProps={{
-              style: { backgroundColor: '#1c1c24', color: '#fff' },
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
@@ -160,9 +185,6 @@ export default function LoginForm() {
                   </IconButton>
                 </InputAdornment>
               ),
-            }}
-            InputLabelProps={{
-              style: { color: '#aaa' },
             }}
           />
 
